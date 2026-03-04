@@ -3,7 +3,18 @@ body {
     background-color: #f4fff8;
 }
 
+nav{
+    text-decoration: none;
+    color: lightblue;
+    text-align: center;
+    border-radius: 20px;
+}
 
+#header-nav{
+    color: lightblue;
+    background-color: lightblue;
+    border-radius: 100px;
+}
 .card {
     position: absolute;
     left: 0; right: 0;

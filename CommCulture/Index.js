@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/about', (req, res) => {
-    res.render('about');
+    res.render('About.ejs');
 });
 app.listen(port, () => {
     console.log('Listening on port', port);
