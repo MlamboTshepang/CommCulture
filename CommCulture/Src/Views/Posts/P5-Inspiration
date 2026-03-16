@@ -1,0 +1,8 @@
+<%- include("Partials/Header.ejs")%>
+<body>
+    <div class="container">
+        <h1 class="title">P5 Inspiration</h1>
+        <p class="subtitle">It remains hard to keep inspired during this day and age all because of the way the world works. </p>
+        <p> It's genuinely hard to try and do something which createes a positive differece but that has mainly now become a thing of which the way people want the world to work</p>
+</body>
+<%- include("Partials/Footer.ejs")%>
