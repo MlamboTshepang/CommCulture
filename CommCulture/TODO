@@ -1,0 +1,24 @@
+TO DO / FILE STRUCTURE
+
+README - COMPLETE
+- Technical Stack
+Reason for Porject
+Creation and Dates
+
+CSS - Styling for the entire project
+
+Index.js - Starting Point of the project
+- Ensure CRUD Operations make sense
+- Use of EJS makes sense
+
+Body of Page
+- Basic Design
+
+Header
+- Needs Styling
+- Intelligent Navbar
+
+Footer
+- Needs Styling
+
+About Page 
