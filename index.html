@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter Archive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+
+<main id="archive-root" class="max-w-4xl mx-auto py-16 px-4"></main>
+
+<script type="module">
+    import { h, render, Component } from 'https://esm.sh/preact@10.19.6';
+    import { useState, useEffect } from 'https://esm.sh/preact@10.19.6/hooks';
+
+    // The individual Article Card component
+    const ArticleCard = ({ article }) => {
+        return h('article', { class: 'bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-6 hover:shadow-md transition-shadow' }, [
+            h('div', { class: 'text-sm text-gray-500 font-medium mb-3 flex items-center gap-2' }, [
+                h('span', null, new Date(article.date).toLocaleDateString()),
+                h('span', null, '•'),
+                h('span', { class: 'bg-gray-100 px-2 py-1 rounded' }, article.author)
+            ]),
+            h('h2', { class: 'text-2xl font-bold mb-3' },
+                // Link to the individual issue (assuming you have a viewer page)
+                h('a', { href: `api/mdx/?slug=${article.slug}`, class: 'hover:text-blue-600 transition-colors' }, article.title)
+            ),
+            h('p', { class: 'text-gray-600 leading-relaxed mb-4' }, article.description),
+            h('a', {
+                href: `api/mdx/?slug=${article.slug}`,
+                class: 'text-blue-600 font-semibold hover:text-blue-800 text-sm flex items-center gap-1'
+            }, 'Read full issue →')
+        ]);
+    };
+
+    // The main Archive List component
+    const ArchiveList = () => {
+        const [articles, setArticles] = useState([]);
+        const [isLoading, setIsLoading] = useState(true);
+        const [error, setError] = useState(null);
+
+        useEffect(() => {
+            async function fetchArchive() {
+                try {
+                    const res = await fetch('http://localhost:3001/api/mdx/archive');
+                    if (!res.ok) throw new Error('Failed to fetch archive');
+                    const data = await res.json();
+                    setArticles(data);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+            fetchArchive();
+        }, []);
+
+        if (isLoading) return h('div', { class: 'text-center py-12 text-gray-500' }, 'Loading archive...');
+        if (error) return h('div', { class: 'text-center py-12 text-red-500' }, `Error: ${error}`);
+
+        return h('div', null, [
+            h('header', { class: 'mb-12' }, [
+                h('h1', { class: 'text-4xl font-extrabold tracking-tight mb-2' }, 'The Archive'),
+                h('p', { class: 'text-xl text-gray-500' }, 'Past deep dives on architecture, engineering, and logic.')
+            ]),
+            h('div', { class: 'space-y-6' },
+                articles.map(article => h(ArticleCard, { key: article.slug, article }))
+            )
+        ]);
+    };
+
+    // Mount the Preact app to the DOM
+    const rootNode = document.getElementById('archive-root');
+    render(h(ArchiveList, null), rootNode);
+</script>
+</body>
+</html>
