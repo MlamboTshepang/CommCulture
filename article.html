@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter Issue</title>
+
+    <!-- Add CSP to allow Preact imports and local API fetches -->
+    <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self'; 
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://esm.sh; 
+    connect-src 'self' http://localhost:3001 https://esm.sh; 
+    style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;">
+    
+<!--    link stylesheet-->
+    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
+</head>
+<body class="bg-white text-gray-900 font-sans antialiased">
+
+<main id="issue-root" class="max-w-3xl mx-auto py-16 px-6"></main>
+
+<script type="module">
+    // 1. Import Preact and the JSX runtime from the CDN
+    import { h, render } from 'https://esm.sh/preact@10.19.6';
+    import { useState, useEffect } from 'https://esm.sh/preact@10.19.6/hooks';
+    import * as jsxRuntime from 'https://esm.sh/preact@10.19.6/jsx-runtime';
+
+    // 2. Define custom UI components to intercept standard Markdown tags
+    // These match the classes in Tailwind's typography plugin
+    const customComponents = {
+        h1: (props) => h('h1', { class: 'text-4xl font-extrabold text-gray-900 mt-10 mb-6', ...props }),
+        h2: (props) => h('h2', { class: 'text-2xl font-bold text-gray-800 mt-8 mb-4 border-b pb-2', ...props }),
+        p: (props) => h('p', { class: 'text-lg text-gray-700 leading-relaxed mb-6', ...props }),
+        ul: (props) => h('ul', { class: 'list-disc pl-6 mb-6 text-gray-700 space-y-2 text-lg', ...props }),
+        // A custom <Callout> component for your MDX
+        Callout: ({ children, type = 'info' }) => {
+            const bg = type === 'warning' ? 'bg-yellow-50 border-yellow-400 text-yellow-800' : 'bg-blue-50 border-blue-400 text-blue-800';
+            return h('div', { class: `p-5 rounded-lg my-8 border-l-4 ${bg}` }, children);
+        }
+    };
+
+    const IssueViewer = () => {
+        const [issueData, setIssueData] = useState({ metadata: null, Component: null });
+        const [isLoading, setIsLoading] = useState(true);
+        const [error, setError] = useState(null);
+
+        // Extract the slug from the URL: e.g., /issue.html?slug=hello-world
+        const urlParams = new URLSearchParams(window.location.search);
+        const slug = urlParams.get('slug');
+
+        useEffect(() => {
+            if (!slug) {
+                setError("No article slug provided in the URL.");
+                setIsLoading(false);
+                return;
+            }
+
+            async function fetchAndRender() {
+                try {
+                    // 3. Fetch the compiled payload
+                    const res = await fetch(`http://localhost:3001/api/mdx/?slug=${slug}`);
+                    if (!res.ok) throw new Error('Failed to fetch the newsletter issue.');
+                    const data = await res.json();
+
+                    // 4. Evaluate the compiled MDX string into an executable component
+                    // We pass a mock React object (since the compiler outputs React code by default)
+                    // and the Preact jsxRuntime to handle the actual rendering.
+                    const fakeReact = { createElement: h };
+                    const evaluate = new Function('React', 'jsxRuntime', data.compiledSource);
+                    const { default: MDXContent } = evaluate(fakeReact, jsxRuntime);
+                    setIssueData({
+                        metadata: data.metadata,
+                        Component: MDXContent
+                    });
+                } catch (err) {
+                    console.error("Evaluation Error:", err);
+                    setError(err.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+            fetchAndRender();
+        }, [slug]);
+
+        if (isLoading) return h('div', { class: 'text-center py-20 text-gray-500' }, 'Loading issue...');
+        if (error) return h('div', { class: 'text-center py-20 text-red-500 font-bold' }, `Error: ${error}`);
+
+        // 5. Construct the final UI layout
+        return h('article', null, [
+
+            // Navigation Back Button
+            h('a', { href: '/index.html', class: 'text-blue-600 hover:underline mb-12 inline-block' }, '← Back to Archive'),
+
+            // Article Header
+            h('header', { class: 'mb-12' }, [
+                h('h1', { class: 'text-5xl font-black tracking-tight text-gray-900 mb-6' }, issueData.metadata.title),
+                h('div', { class: 'flex items-center text-gray-500 font-medium text-sm' }, [
+                    h('span', null, `By ${issueData.metadata.author}`),
+                    h('span', { class: 'mx-3' }, '•'),
+                    h('span', null, new Date(issueData.metadata.date).toLocaleDateString())
+                ])
+            ]),
+            // Evaluated MDX Content
+            h('div', { class: 'prose-container' },
+                h(issueData.Component, { components: customComponents })
+            )
+        ]);
+    };
+    // Mount to DOM
+    const rootNode = document.getElementById('issue-root');
+    render(h(IssueViewer, null), rootNode);
+</script>
+</body>
+</html>
